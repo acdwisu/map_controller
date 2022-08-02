@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geojson/geojson.dart';
@@ -23,11 +22,10 @@ import 'types.dart';
 class StatefulMapController {
   /// Provide a Flutter map [MapController]
   StatefulMapController(
-      {@required this.mapController,
-      this.tileLayerType = TileLayerType.normal,
-      this.customTileLayer,
-      this.verbose = false})
-      : assert(mapController != null) {
+      {required this.mapController,
+        this.tileLayerType = TileLayerType.normal,
+        this.customTileLayer,
+        this.verbose = false}) {
     // init state
     _markersState = MarkersState(mapController: mapController, notify: notify);
     _linesState = LinesState(notify: notify);
@@ -40,35 +38,35 @@ class StatefulMapController {
     }
     _tileLayerState = TileLayerState(
         type: tileLayerType, customTileLayer: customTileLayer, notify: notify);
-    mapController.onReady.then((_) {
+    mapController.onReady.then<void>(() {
       // fire the map is ready callback
       if (!_readyCompleter.isCompleted) {
         _readyCompleter.complete();
       }
-    });
+    } as FutureOr<void> Function(Null));
   }
 
   /// The Flutter Map [MapController]
   final MapController mapController;
 
   /// The Flutter Map [MapOptions]
-  MapOptions mapOptions;
+  MapOptions? mapOptions;
 
   /// The initial tile layer
   TileLayerType tileLayerType;
 
   /// A custom tile layer options
-  TileLayerOptions customTileLayer;
+  TileLayerOptions? customTileLayer;
 
   /// Verbosity level
   final bool verbose;
 
-  MapState _mapState;
-  MarkersState _markersState;
-  LinesState _linesState;
-  PolygonsState _polygonsState;
-  TileLayerState _tileLayerState;
-  StatefulMarkersState _statefulMarkersState;
+  late MapState _mapState;
+  late MarkersState _markersState;
+  late LinesState _linesState;
+  late PolygonsState _polygonsState;
+  late TileLayerState _tileLayerState;
+  late StatefulMarkersState _statefulMarkersState;
 
   final Completer<void> _readyCompleter = Completer<void>();
   final _subject = PublishSubject<StatefulMapControllerStateChange>();
@@ -90,24 +88,26 @@ class StatefulMapController {
   LatLng get center => mapController.center;
 
   /// The stateful markers present on the map
-  Map<String, StatefulMarker> get statefulMarkers =>
+  Map<String?, StatefulMarker> get statefulMarkers =>
       _statefulMarkersState.statefulMarkers;
 
-  void addStatefulMarker({String name, StatefulMarker statefulMarker}) =>
+  void addStatefulMarker(
+      {String? name, required StatefulMarker statefulMarker}) =>
       _statefulMarkersState.addStatefulMarker(name, statefulMarker);
 
   void addStatefulMarkers(Map<String, StatefulMarker> statefulMarkers) =>
       _statefulMarkersState.addStatefulMarkers(statefulMarkers);
 
-  void mutateMarker({String name, String property, dynamic value}) =>
+  void mutateMarker({String? name, String? property, dynamic value}) =>
       _statefulMarkersState.mutate(name, property, value);
 
   /// The markers present on the map
   List<Marker> get markers {
-    List<Marker> markers = [];
-    markers
-      ..addAll(_markersState.markers)
-      ..addAll(_statefulMarkersState.markers);
+    final markers = <Marker>[
+      ..._markersState.markers,
+      ..._statefulMarkersState.markers,
+    ];
+
     return markers;
   }
 
@@ -118,7 +118,7 @@ class StatefulMapController {
   List<Polyline> get lines => _linesState.lines;
 
   /// The named lines present on the map
-  Map<String, Polyline> get namedLines => _linesState.namedLines;
+  Map<String?, Polyline> get namedLines => _linesState.namedLines;
 
   /// The polygons present on the map
   List<Polygon> get polygons => _polygonsState.polygons;
@@ -127,7 +127,7 @@ class StatefulMapController {
   Map<String, Polygon> get namedPolygons => _polygonsState.namedPolygons;
 
   /// The current map tile layer
-  TileLayerOptions get tileLayer => _tileLayerState.tileLayer;
+  TileLayerOptions? get tileLayer => _tileLayerState.tileLayer;
 
   /// Zoom in one level
   Future<void> zoomIn() => _mapState.zoomIn();
@@ -146,19 +146,19 @@ class StatefulMapController {
       _mapState.onPositionChanged(pos, gesture);
 
   /// Add a marker on the map
-  Future<void> addMarker({@required Marker marker, @required String name}) =>
+  Future<void> addMarker({required Marker marker, required String? name}) =>
       _markersState.addMarker(marker: marker, name: name);
 
   /// Remove a marker from the map
-  Future<void> removeMarker({@required String name}) =>
+  Future<void> removeMarker({required String name}) =>
       _markersState.removeMarker(name: name);
 
   /// Add multiple markers to the map
-  Future<void> addMarkers({@required Map<String, Marker> markers}) =>
+  Future<void> addMarkers({required Map<String, Marker> markers}) =>
       _markersState.addMarkers(markers: markers);
 
   /// Remove multiple makers from the map
-  Future<void> removeMarkers({@required List<String> names}) =>
+  Future<void> removeMarkers({required List<String> names}) =>
       _markersState.removeMarkers(names: names);
 
   /// Fit bounds for all markers on map
@@ -169,7 +169,7 @@ class StatefulMapController {
 
   /// Fit bounds and zoom the map to center on a line
   Future<void> fitLine(String name) async {
-    final line = _linesState.namedLines[name];
+    final line = _linesState.namedLines[name]!;
     final bounds = LatLngBounds();
     line.points.forEach(bounds.extend);
     mapController.fitBounds(bounds);
@@ -177,11 +177,11 @@ class StatefulMapController {
 
   /// Add a line on the map
   Future<void> addLine(
-      {@required String name,
-      @required List<LatLng> points,
-      double width = 3.0,
-      Color color = Colors.green,
-      bool isDotted = false}) async {
+      {required String? name,
+        required List<LatLng> points,
+        double width = 3.0,
+        Color color = Colors.green,
+        bool isDotted = false}) async {
     await _linesState.addLine(
         name: name,
         points: points,
@@ -192,14 +192,14 @@ class StatefulMapController {
 
   /// Add a line on the map
   Future<void> addLineFromGeoPoints(
-      {@required String name,
-      @required List<GeoPoint> geoPoints,
-      double width = 3.0,
-      Color color = Colors.green,
-      bool isDotted = false}) async {
+      {required String name,
+        required List<GeoPoint> geoPoints,
+        double width = 3.0,
+        Color color = Colors.green,
+        bool isDotted = false}) async {
     final points =
-        GeoSerie(type: GeoSerieType.line, name: "serie", geoPoints: geoPoints)
-            .toLatLng();
+    GeoSerie(type: GeoSerieType.line, name: "serie", geoPoints: geoPoints)
+        .toLatLng();
     await _linesState.addLine(
         name: name,
         points: points,
@@ -216,11 +216,11 @@ class StatefulMapController {
 
   /// Add a polygon on the map
   Future<void> addPolygon(
-          {@required String name,
-          @required List<LatLng> points,
-          Color color = Colors.lightBlue,
-          double borderWidth = 0.0,
-          Color borderColor = const Color(0xFFFFFF00)}) =>
+      {required String name,
+        required List<LatLng> points,
+        Color color = Colors.lightBlue,
+        double borderWidth = 0.0,
+        Color borderColor = const Color(0xFFFFFF00)}) =>
       _polygonsState.addPolygon(
           name: name,
           points: points,
@@ -235,10 +235,8 @@ class StatefulMapController {
   /// Display some geojson data on the map
   Future<void> fromGeoJson(String data,
       {bool verbose = false,
-      Icon markerIcon = const Icon(Icons.location_on),
-      bool noIsolate = false}) async {
-    print("From geojson $data");
-
+        Icon markerIcon = const Icon(Icons.location_on),
+        bool noIsolate = false}) async {
     final geojson = GeoJson();
     geojson.processedFeatures.listen((GeoJsonFeature feature) {
       switch (feature.type) {
@@ -247,30 +245,32 @@ class StatefulMapController {
           unawaited(addMarker(
             name: point.name,
             marker: Marker(
-                point: point.geoPoint.point,
+                point:
+                LatLng(point.geoPoint.latitude, point.geoPoint.longitude),
                 builder: (BuildContext context) => markerIcon),
           ));
           break;
         case GeoJsonFeatureType.multipoint:
           final mp = feature.geometry as GeoJsonMultiPoint;
-          for (final geoPoint in mp.geoSerie.geoPoints) {
+          for (final geoPoint in mp.geoSerie!.geoPoints) {
             unawaited(addMarker(
               name: geoPoint.name,
               marker: Marker(
-                  point: geoPoint.point,
+                  point: LatLng(geoPoint.latitude, geoPoint.longitude),
                   builder: (BuildContext context) => markerIcon),
             ));
           }
           break;
         case GeoJsonFeatureType.line:
           final line = feature.geometry as GeoJsonLine;
-          unawaited(addLine(name: line.name, points: line.geoSerie.toLatLng()));
+          unawaited(
+              addLine(name: line.name, points: line.geoSerie!.toLatLng()));
           break;
         case GeoJsonFeatureType.multiline:
           final ml = feature.geometry as GeoJsonMultiLine;
           for (final line in ml.lines) {
             unawaited(
-                addLine(name: line.name, points: line.geoSerie.toLatLng()));
+                addLine(name: line.name, points: line.geoSerie!.toLatLng()));
           }
           break;
         case GeoJsonFeatureType.polygon:
@@ -290,7 +290,7 @@ class StatefulMapController {
           }
           break;
         case GeoJsonFeatureType.geometryCollection:
-          // TODO : implement
+        // TODO : implement
           throw const NotImplementedException(
               "GeoJsonFeatureType.geometryCollection Not implemented");
       }
