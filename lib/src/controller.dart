@@ -38,12 +38,11 @@ class StatefulMapController {
     }
     _tileLayerState = TileLayerState(
         type: tileLayerType, customTileLayer: customTileLayer, notify: notify);
-    mapController.onReady.then<void>(() {
-      // fire the map is ready callback
+    mapController.onReady.then((value) {
       if (!_readyCompleter.isCompleted) {
         _readyCompleter.complete();
       }
-    } as FutureOr<void> Function(Null));
+    });
   }
 
   /// The Flutter Map [MapController]
